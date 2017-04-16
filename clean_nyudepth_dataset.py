@@ -48,14 +48,3 @@ for folder in dataset_folders:
     for file in files:
         if file not in keys and file not in values:
             os.remove(get_full_path(folder, [file])[0])
-
-    dp_path = get_full_path(folder, [keys[0]])[0]
-    img_path = get_full_path(folder, [values[0]])[0]
-    img = cv2.resize(cv2.imread(img_path, -1), (70, 50))
-    dp = cv2.resize(cv2.imread(dp_path, -1), (70, 50))
-    cv2.imshow("depth1", dp)
-    cv2.imshow("rgb1", img)
-    print(np.amin(cv2.imread(dp_path, -1)), np.amax(cv2.imread(dp_path, -1)))
-    cv2.imshow("depth2", fix_depth_map(img, dp))
-    cv2.waitKey(0)
-    cv2.destroyAllWindows()
