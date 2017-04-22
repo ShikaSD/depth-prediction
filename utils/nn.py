@@ -76,3 +76,27 @@ def disp_smoothness(output, scaled):
     smoothness_x = [output_gradients_x[i] * weights_x[i] for i in range(4)]
     smoothness_y = [output_gradients_y[i] * weights_y[i] for i in range(4)]
     return smoothness_x + smoothness_y
+
+
+def ssim(x, y):
+    """
+    Define SSIM with structure similar to https://github.com/mubeta06/python/blob/master/signal_processing/sp/ssim.py  
+    Use avg pool instead of gaussian to speed up calculations
+    Calculate structural dissimilarity as defined in https://en.wikipedia.org/wiki/Structural_similarity#Structural_Dissimilarity
+    """
+    C1 = 0.01 ** 2
+    C2 = 0.03 ** 2
+
+    mu_x = avg_pool2d(x, (3, 3), stride=1, padding='VALID')
+    mu_y = avg_pool2d(y, (3, 3), stride=1, padding='VALID')
+
+    mu_xsq = tf.square(mu_x)
+    mu_ysq = tf.square(mu_y)
+    mu_xy = mu_x * mu_y
+    sigma_x  = avg_pool2d(tf.square(x), (3, 3), stride=1, padding='VALID') - mu_xsq
+    sigma_y  = avg_pool2d(tf.square(y), (3, 3), stride=1, padding='VALID') - mu_ysq
+    sigma_xy = avg_pool2d(x * y, (3, 3), stride=1, padding='VALID') - mu_xy
+
+    ssim = ((2 * mu_xy + C1) * (2 * sigma_xy + C2)) / (mu_xsq + mu_ysq + C1) * (sigma_x + sigma_y + C2)
+
+    return tf.clip_by_value((1 - ssim) / 2, 0, 1)
