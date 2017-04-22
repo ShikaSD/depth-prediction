@@ -1,18 +1,25 @@
 import tensorflow as tf
 from tensorflow.contrib.layers import *
+import numpy as np
 
 from utils.bilinear import bilinear_sampler_1d_h
 
 
+# def convolution2d(tensor, output_depth, kernel_size, activation_fn, stride=1):
+#     padding = np.floor((kernel_size[0] - 1) / 2).astype(np.int32)
+#     tensor = tf.pad(tensor, [[0, 0], [padding, padding], [padding, padding], [0, 0]])
+#     return conv2d(tensor, output_depth, kernel_size, stride=stride, activation_fn=activation_fn)
+
+
 def _upsample(tensor, scale):
-    shape = tf.shape(tensor)
+    shape = tensor.get_shape().as_list()
     h = shape[1]
     w = shape[2]
-    return tf.image.resize_nearest_neighbor(tensor, [h * scale, w * scale])
+    return tf.image.resize_nearest_neighbor(tensor, size=[h * scale, w * scale])
 
 
 def _disp(tensor):
-    return 0.3 * convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=tf.nn.sigmoid)
+    return convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=tf.nn.sigmoid) * 0.3
 
 
 def encoder_block(tensor, output_depth, kernel_size=(3, 3)):
@@ -27,7 +34,7 @@ def decoder_block(tensor, output_depth, concat_layer, kernel_size=(3, 3), scale=
     fconv  = convolution2d(concat, output_depth, kernel_size=kernel_size, activation_fn=tf.nn.elu)
 
     if with_disp:
-        return fconv, _upsample(_disp(tensor), 2) if upsample_disp else _disp(tensor)
+        return fconv, _upsample(_disp(fconv), 2) if upsample_disp else _disp(fconv)
 
     return fconv
 
@@ -40,12 +47,12 @@ num_scales = 4
 
 def scaled_batch(batch):
     scaled = [batch]
-    shape = tf.shape(batch)
+    shape = batch.get_shape().as_list()
     h = shape[1]
     w = shape[2]
     for i in range(num_scales - 1):
-        scale = (i + 1) ** 2
-        scaled.append(tf.image.resize_area(batch, [h / scale, w / scale]))
+        scale = 2 ** i
+        scaled.append(tf.image.resize_area(batch, [tf.to_int32(h / scale), tf.to_int32(w / scale)]))
     return scaled
 
 
