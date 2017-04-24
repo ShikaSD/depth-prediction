@@ -111,6 +111,8 @@ def train(run_num):
 
     tf.summary.scalar('learning_rate', rate, ['model'])
     tf.summary.scalar('loss', loss_op, ['model'])
+    summary(outputs_left, outputs_right, batch_x, batch_y)
+    summary_op = tf.summary.merge_all('model')
 
     config = tf.ConfigProto(allow_soft_placement=True)
     with tf.Session(config=config) as sess:
@@ -136,8 +138,6 @@ def train(run_num):
                 print_string = 'batch {:>6} | examples/s: {:4.2f} | loss: {:.5f} | time elapsed: {:.2f}s | time left: {:.2f}s'
                 print(print_string.format(step, examples_per_sec, loss_value, time_so_far, training_time_left))
 
-                summary(outputs_left, outputs_right, batch_x, batch_y, loss_op, step)
-                summary_op = tf.summary.merge_all('model')
                 summary_str = sess.run(summary_op)
                 summary_writer.add_summary(summary_str, global_step=step)
 

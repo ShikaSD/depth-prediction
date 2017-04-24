@@ -1,5 +1,6 @@
 from utils.nn import *
 
+
 def model(input_tensor):
     with tf.variable_scope("encoder"):
         # Encoder (VGG based)
@@ -98,7 +99,7 @@ def loss(output_left, output_right, batch_left, batch_right):
         return image_loss + 0.1 * disp_loss + lr_loss
 
 
-def summary(output_left, output_right, batch_left, batch_right, loss, global_step):
+def summary(output_left, output_right, batch_left, batch_right):
 
     scaled_left = scaled_batch(batch_left)
     scaled_right = scaled_batch(batch_right)
@@ -113,4 +114,4 @@ def summary(output_left, output_right, batch_left, batch_right, loss, global_ste
     with tf.variable_scope("right"):
         tf.summary.image("image", batch_right, max_outputs=1, collections=collections)
         tf.summary.image('disparity', output_right[0], max_outputs=1, collections=collections)
-        tf.summary.image('generated', generate_image(scaled_left[0], -output_right[0]), max_outputs=1, collections=collections)
+        tf.summary.image('generated', generate_image(scaled_left[0], output_right[0]), max_outputs=1, collections=collections)
