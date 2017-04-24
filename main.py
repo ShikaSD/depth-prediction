@@ -144,7 +144,7 @@ def train(run_num):
                 if step % 5 == 0:
                     saver.save(sess, logdir + '/model.cpkt', global_step=step)
 
-        saver.save(sess, 'logs/model.cpkt', global_step=EPOCHS)
+        saver.save(sess, logdir + '/model.cpkt', global_step=EPOCHS)
 
         coordinator.request_stop()
         coordinator.join(threads)
