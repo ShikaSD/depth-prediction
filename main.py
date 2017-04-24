@@ -13,8 +13,10 @@ def preprocess_test_images(left_image, right_image):
 
         # augment images
         should_augment = tf.Variable(tf.random_uniform([], 0, 1), trainable=False)
-        left_image, right_image = tf.cond(tf.greater(should_augment, 0.5), lambda: augment(left_image, right_image),
-                                          lambda: (left_image, right_image))
+        left_image, right_image = tf.cond(
+            tf.greater(should_augment, 0.5),
+            lambda: augment(left_image, right_image),
+            lambda: (left_image, right_image))
 
         left_image.set_shape([None, None, 3])
         right_image.set_shape([None, None, 3])
@@ -94,13 +96,16 @@ def train(run_num):
     EPOCHS = 50
     BATCH_SIZE = 32
 
+    total_steps = (train_length // BATCH_SIZE) * EPOCHS
+    print("Total steps: %d" % total_steps)
+
     global_step = tf.Variable(0, trainable=False)
 
-    boundaries = [np.int32((3 / 5.0) * EPOCHS), np.int32((4 / 5.0) * EPOCHS)]
+    boundaries = [np.int32((3 / 5.0) * total_steps), np.int32((4 / 5.0) * total_steps)]
     values = [rate, rate / 2, rate / 4]
-    learning_rate = tf.train.piecewise_constant(global_step, boundaries, values)
+    rate = tf.train.piecewise_constant(global_step, boundaries, values)
 
-    optimizer = tf.train.AdamOptimizer(learning_rate)
+    optimizer = tf.train.AdamOptimizer(rate)
 
     batch_x, batch_y = read_images(train_filenames, batch_size=BATCH_SIZE)
     outputs, outputs_left, outputs_right = model(batch_x)
@@ -127,21 +132,21 @@ def train(run_num):
 
         start_step = global_step.eval(session=sess)
         start_time = time.time()
-        for step in range(start_step, EPOCHS):
+        for step in range(start_step, total_steps):
             before_op_time = time.time()
             _, loss_value = sess.run([grads_apply_op, loss_op])
             duration = time.time() - before_op_time
             if step:
-                examples_per_sec = train_length / duration
+                examples_per_sec = BATCH_SIZE / duration
                 time_so_far = (time.time() - start_time)
-                training_time_left = (EPOCHS / step - 1.0) * time_so_far
-                print_string = 'batch {:>6} | examples/s: {:4.2f} | loss: {:.5f} | time elapsed: {:.2f}s | time left: {:.2f}s'
+                training_time_left = (total_steps / step - 1.0) * time_so_far
+                print_string = 'step {:>6} | examples/s: {:4.2f} | loss: {:.5f} | time elapsed: {:.2f}s | time left: {:.2f}s'
                 print(print_string.format(step, examples_per_sec, loss_value, time_so_far, training_time_left))
 
                 summary_str = sess.run(summary_op)
                 summary_writer.add_summary(summary_str, global_step=step)
 
-                if step % 5 == 0:
+                if step % (total_steps // (EPOCHS * 3)) == 0:
                     saver.save(sess, logdir + '/model.cpkt', global_step=step)
 
         saver.save(sess, logdir + '/model.cpkt', global_step=EPOCHS)
@@ -149,4 +154,4 @@ def train(run_num):
         coordinator.request_stop()
         coordinator.join(threads)
 
-train(1)
+train(0)

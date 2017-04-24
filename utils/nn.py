@@ -19,7 +19,7 @@ def _upsample(tensor, scale):
 
 
 def _disp(tensor):
-    return convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=tf.nn.sigmoid) * 0.3
+    return .3 * convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=tf.nn.relu)
 
 
 def encoder_block(tensor, output_depth, kernel_size=(3, 3)):

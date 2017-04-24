@@ -1,15 +1,7 @@
 import shutil
 import os
 
-kitti_dataset_folders = [
-    'kitti/2011_09_26_drive_0001_sync/',
-    'kitti/2011_09_26_drive_0009_sync/',
-    'kitti/2011_09_26_drive_0084_sync/',
-    'kitti/2011_09_26_drive_0093_sync/',
-    'kitti/2011_09_26_drive_0096_sync/',
-    'kitti/2011_09_26_drive_0117_sync/',
-    'kitti/2011_09_28_drive_0002_sync/',
-    'kitti/2011_09_29_drive_0071_sync/']
+kitti_dataset_folders = list(map(lambda x: "kitti/" + x + "/", list(filter(lambda x: x.endswith("sync"), os.listdir("kitti")))))
 output = []
 
 for folder in kitti_dataset_folders:
