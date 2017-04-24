@@ -28,16 +28,29 @@ def encoder_block(tensor, output_depth, kernel_size=(3, 3)):
     return conv2
 
 
-def decoder_block(tensor, output_depth, concat_layer, kernel_size=(3, 3), scale=1, with_disp=False, upsample_disp=True):
+def deconv_decoder_block(tensor, output_depth, concat_layer, kernel_size=(3, 3), scale=1, with_disp=False, upsample_disp=True):
     conv   = convolution2d_transpose(tensor, output_depth, kernel_size=kernel_size, stride=scale, activation_fn=tf.nn.elu)
     concat = tf.concat([conv, concat_layer], 3)
     fconv  = convolution2d(concat, output_depth, kernel_size=kernel_size, activation_fn=tf.nn.elu)
 
     if with_disp:
-        return fconv, _upsample(_disp(fconv), 2) if upsample_disp else _disp(fconv)
+        conv_disp = _disp(fconv)
+        return (fconv, conv_disp, _upsample(conv_disp, 2)) if upsample_disp else (fconv, conv_disp)
 
     return fconv
 
+
+def upsample_decoder_block(tensor, output_depth, concat_layer, kernel_size=(3, 3), scale=1, with_disp=False, upsample_disp=True):
+    upsample = _upsample(tensor, scale)
+    conv     = convolution2d(upsample, output_depth, kernel_size=kernel_size, activation_fn=tf.nn.elu)
+    concat   = tf.concat([conv, concat_layer], 3)
+    fconv    = convolution2d(concat, output_depth, kernel_size=kernel_size, activation_fn=tf.nn.elu)
+
+    if with_disp:
+        conv_disp = _disp(fconv)
+        return (fconv, conv_disp, _upsample(conv_disp, 2)) if upsample_disp else (fconv, conv_disp)
+
+    return fconv
 
 def generate_image(img, disp):
     return bilinear_sampler_1d_h(img, disp)
@@ -51,7 +64,7 @@ def scaled_batch(batch):
     h = shape[1]
     w = shape[2]
     for i in range(num_scales - 1):
-        scale = 2 ** i
+        scale = 2 ** (i + 1)
         scaled.append(tf.image.resize_area(batch, [tf.to_int32(h / scale), tf.to_int32(w / scale)]))
     return scaled
 
