@@ -94,7 +94,7 @@ def train(run_num):
     rate = 1e-4
 
     EPOCHS = 50
-    BATCH_SIZE = 8
+    BATCH_SIZE = 32
 
     total_steps = (train_length // BATCH_SIZE) * EPOCHS
     print("Total steps: %d" % total_steps)
@@ -154,4 +154,5 @@ def train(run_num):
         coordinator.request_stop()
         coordinator.join(threads)
 
+tf.logging.set_verbosity()
 train(0)
