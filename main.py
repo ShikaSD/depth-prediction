@@ -154,5 +154,5 @@ def train(run_num):
         coordinator.request_stop()
         coordinator.join(threads)
 
-tf.logging.set_verbosity()
+tf.logging.set_verbosity(tf.logging.WARN)
 train(0)
