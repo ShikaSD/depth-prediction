@@ -1,4 +1,5 @@
 from model import *
+import cv2
 import time
 
 
@@ -84,6 +85,43 @@ def count_lines(filenames):
     return counter
 
 
+def test(checkpoint_path=""):
+    test_filenames = ["kitti/test.txt"]
+    test_length = count_lines(test_filenames)
+
+    BATCH_SIZE = 1
+
+    left, right = read_images(test_filenames, batch_size=BATCH_SIZE)
+
+    conv1, output_left, output_right = model(left)
+
+    config = tf.ConfigProto(allow_soft_placement=True)
+    with tf.Session(config=config) as sess:
+        loader = tf.train.Saver()
+
+        sess.run(tf.global_variables_initializer())
+        sess.run(tf.local_variables_initializer())
+        coordinator = tf.train.Coordinator()
+        tf.train.start_queue_runners(sess=sess, coord=coordinator)
+        loader.recover_last_checkpoints([checkpoint_path])
+
+        print('now testing {} files'.format(test_length))
+        disparities = np.zeros((test_length, 512, 512), dtype=np.float32)
+        conv = None
+        for step in range(test_length):
+            disp, conv = sess.run([output_left[0], conv1])
+            disparities[step] = disp[0].squeeze()
+            ## disparities_pp[step] = post_process_disparity(disp.squeeze())
+
+        print('done.')
+
+        print('showing disparities.')
+        for i in range(0, conv.shape[3]):
+            img = conv[0, :, :, i:i+1]
+            img = np.int32((img / np.max(img)) * 255)
+            cv2.imwrite("img/image_%d.jpg" % i, img)
+
+
 def train(run_num):
     tf.logging.set_verbosity(tf.logging.WARN)
     logdir = "logs/run%d" % run_num
@@ -149,7 +187,7 @@ def train(run_num):
                 print_string = 'step {:>6} | examples/s: {:4.2f} | loss: {:.5f} | time elapsed: {:.2f}s | time left: {:.2f}s'
                 print(print_string.format(step, examples_per_sec, loss_value, time_so_far, training_time_left))
 
-                if step % (total_steps // (EPOCHS * 2)) == 0:
+                if step:
                     summary_str = sess.run(summary_op)
                     summary_writer.add_summary(summary_str, global_step=step)
                     saver.save(sess, logdir + '/model.cpkt', global_step=step)
@@ -159,4 +197,5 @@ def train(run_num):
         coordinator.request_stop()
         coordinator.join(threads)
 
-train(0)
+train(1)
+# test("ext/checkpoint")

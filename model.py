@@ -106,12 +106,13 @@ def summary(output_left, output_right, batch_left, batch_right):
 
     collections = ['model']
 
-    with tf.variable_scope("left"):
-        tf.summary.image("image", batch_left, max_outputs=1, collections=collections)
-        tf.summary.image('disparity', output_left[0], max_outputs=1,collections=collections)
-        tf.summary.image('generated', generate_image(scaled_right[0], -output_left[0]), max_outputs=1, collections=collections)
+    for i in range(num_scales):
+        with tf.variable_scope("left_%d" % i):
+            tf.summary.image("image", scaled_left[i], max_outputs=1, collections=collections)
+            tf.summary.image('disparity', output_left[i], max_outputs=1,collections=collections)
+            tf.summary.image('generated', generate_image(scaled_right[i], -output_left[i]), max_outputs=1, collections=collections)
 
-    with tf.variable_scope("right"):
-        tf.summary.image("image", batch_right, max_outputs=1, collections=collections)
-        tf.summary.image('disparity', output_right[0], max_outputs=1, collections=collections)
-        tf.summary.image('generated', generate_image(scaled_left[0], output_right[0]), max_outputs=1, collections=collections)
+        with tf.variable_scope("right_%d" % i):
+            tf.summary.image("image", scaled_right[i], max_outputs=1, collections=collections)
+            tf.summary.image('disparity', output_right[i], max_outputs=1, collections=collections)
+            tf.summary.image('generated', generate_image(scaled_left[i], output_right[i]), max_outputs=1, collections=collections)

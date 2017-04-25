@@ -22,7 +22,7 @@ def _disp(tensor):
     disp = convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=tf.nn.sigmoid)
     shape = tf.shape(disp)
     w = shape[2]
-    return .3 * w * disp
+    return .3 * disp * tf.to_float(w)
 
 
 def encoder_block(tensor, output_depth, kernel_size=(3, 3)):
