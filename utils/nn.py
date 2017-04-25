@@ -12,14 +12,17 @@ from utils.bilinear import bilinear_sampler_1d_h
 
 
 def _upsample(tensor, scale):
-    shape = tensor.get_shape().as_list()
+    shape = tf.shape(tensor)
     h = shape[1]
     w = shape[2]
     return tf.image.resize_nearest_neighbor(tensor, size=[h * scale, w * scale])
 
 
 def _disp(tensor):
-    return .3 * convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=tf.nn.sigmoid)
+    disp = convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=tf.nn.sigmoid)
+    shape = tf.shape(disp)
+    w = shape[2]
+    return .3 * w * disp
 
 
 def encoder_block(tensor, output_depth, kernel_size=(3, 3)):
@@ -52,6 +55,7 @@ def upsample_decoder_block(tensor, output_depth, concat_layer, kernel_size=(3, 3
 
     return fconv
 
+
 def generate_image(img, disp):
     return bilinear_sampler_1d_h(img, disp)
 
@@ -60,7 +64,7 @@ num_scales = 4
 
 def scaled_batch(batch):
     scaled = [batch]
-    shape = batch.get_shape().as_list()
+    shape = tf.shape(batch)
     h = shape[1]
     w = shape[2]
     for i in range(num_scales - 1):
