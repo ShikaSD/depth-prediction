@@ -85,6 +85,7 @@ def count_lines(filenames):
 
 
 def train(run_num):
+    tf.logging.set_verbosity(tf.logging.WARN)
     logdir = "logs/run%d" % run_num
 
     train_filenames = ["kitti/train.txt"]
@@ -108,11 +109,16 @@ def train(run_num):
     optimizer = tf.train.AdamOptimizer(rate)
 
     batch_x, batch_y = read_images(train_filenames, batch_size=BATCH_SIZE)
-    outputs, outputs_left, outputs_right = model(batch_x)
-    loss_op = loss(outputs_left, outputs_right, batch_x, batch_y)
+    tower_loss = None
+    tower_grad = None
 
-    grads = optimizer.compute_gradients(loss_op)
-    grads_apply_op = optimizer.apply_gradients(grads, global_step=global_step)
+    with tf.device('/gpu:0'):
+        outputs, outputs_left, outputs_right = model(batch_x)
+        tower_loss = loss(outputs_left, outputs_right, batch_x, batch_y)
+        tower_grad = optimizer.compute_gradients(tower_loss)
+
+    grads_apply_op = optimizer.apply_gradients(tower_grad, global_step=global_step)
+    loss_op = tower_loss
 
     tf.summary.scalar('learning_rate', rate, ['model'])
     tf.summary.scalar('loss', loss_op, ['model'])
@@ -143,10 +149,9 @@ def train(run_num):
                 print_string = 'step {:>6} | examples/s: {:4.2f} | loss: {:.5f} | time elapsed: {:.2f}s | time left: {:.2f}s'
                 print(print_string.format(step, examples_per_sec, loss_value, time_so_far, training_time_left))
 
-                summary_str = sess.run(summary_op)
-                summary_writer.add_summary(summary_str, global_step=step)
-
-                if step % (total_steps // (EPOCHS * 3)) == 0:
+                if step % (total_steps // (EPOCHS * 2)) == 0:
+                    summary_str = sess.run(summary_op)
+                    summary_writer.add_summary(summary_str, global_step=step)
                     saver.save(sess, logdir + '/model.cpkt', global_step=step)
 
         saver.save(sess, logdir + '/model.cpkt', global_step=EPOCHS)
@@ -154,5 +159,4 @@ def train(run_num):
         coordinator.request_stop()
         coordinator.join(threads)
 
-tf.logging.set_verbosity(tf.logging.WARN)
 train(0)
