@@ -42,7 +42,7 @@ def model(input_tensor):
         outputs_left  = [tf.expand_dims(x[:, :, :, 0], 3) for x in outputs]
         outputs_right = [tf.expand_dims(x[:, :, :, 1], 3) for x in outputs]
 
-        return outputs, outputs_left, outputs_right
+        return disp4, outputs_left, outputs_right
 
 
 def loss(output_left, output_right, batch_left, batch_right):

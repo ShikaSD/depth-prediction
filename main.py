@@ -115,6 +115,7 @@ def test(checkpoint_path=""):
 
         print('done.')
 
+        print(conv)
         print('showing disparities.')
         for i in range(0, conv.shape[3]):
             img = conv[0, :, :, i:i+1]
@@ -147,8 +148,6 @@ def train(run_num):
     optimizer = tf.train.AdamOptimizer(rate)
 
     batch_x, batch_y = read_images(train_filenames, batch_size=BATCH_SIZE)
-    tower_loss = None
-    tower_grad = None
 
     with tf.device('/gpu:0'):
         outputs, outputs_left, outputs_right = model(batch_x)
@@ -187,7 +186,7 @@ def train(run_num):
                 print_string = 'step {:>6} | examples/s: {:4.2f} | loss: {:.5f} | time elapsed: {:.2f}s | time left: {:.2f}s'
                 print(print_string.format(step, examples_per_sec, loss_value, time_so_far, training_time_left))
 
-                if step:
+                if step % 1 == 0:# (total_steps // (EPOCHS * 3)):
                     summary_str = sess.run(summary_op)
                     summary_writer.add_summary(summary_str, global_step=step)
                     saver.save(sess, logdir + '/model.cpkt', global_step=step)
@@ -197,5 +196,5 @@ def train(run_num):
         coordinator.request_stop()
         coordinator.join(threads)
 
-train(1)
-# test("ext/checkpoint")
+train(2)
+#test("logs/run2/checkpoint")

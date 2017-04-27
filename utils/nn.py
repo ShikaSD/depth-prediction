@@ -19,7 +19,7 @@ def _upsample(tensor, scale):
 
 
 def _disp(tensor):
-    disp = convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=tf.nn.relu)
+    disp = tf.nn.softmax(convolution2d(tensor, 2, kernel_size=(3, 3), activation_fn=None))
     return disp
 
 
